@@ -306,10 +306,13 @@ async function importarExcel(event) {
       " Los registros antiguos que no estén en este Excel no se eliminaron.";
     await cargarDatos();
     document.getElementById("resultado").classList.add("hidden");
+
   } catch(err) {
     console.error(err);
-    msg.textContent="No se pudo subir el Excel. Revisa que tu sesión siga activa y que las políticas de Supabase permitan escribir solo a tu usuario administrador.";
+    msg.textContent = "Error: " + (err.message || String(err)) +
+      (err.code ? " | Código: " + err.code : "");
   }
+
   event.target.value="";
 }
 
