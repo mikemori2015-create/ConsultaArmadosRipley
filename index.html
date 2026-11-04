@@ -46,6 +46,16 @@ h3 { color: #c2086b; margin-top: 0; }
 .vozfila { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
 .vozfila select { flex: 1; min-width: 0; padding: 10px; border: 1px solid #ffb3d6; border-radius: 9px; font-size: 14px; background: #fff; color: #2b1a26; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+const SUPABASE_URL = "https://rbpmtbmytufxrnlbphwm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3HOQAU63KGmstED5TRA2oQ_yYUOcSf9";
+
+const supabaseArmados = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+</script>
 </head>
 <body>
 <header>
