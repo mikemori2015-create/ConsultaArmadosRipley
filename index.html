@@ -81,12 +81,10 @@ h3 { color: #c2086b; margin-top: 0; }
       <a id="enlace" class="enlace hidden" target="_blank" rel="noopener">🛒 Ver en Ripley.com</a>
     </div>
     <p id="mensaje" class="small"></p>
-    <button class="admin-access" onclick="mostrarAccesoAdmin()">
-  Acceso administrador
-</button>
+  
   </section>
 
-  <<section id="panelAdmin" class="panel hidden">
+<section id="panelAdmin" class="panel hidden">
     <h3>📥 Subir archivo</h3>
     <div id="estado" class="estado"></div>
 
@@ -558,6 +556,19 @@ document.getElementById("sku").addEventListener("keydown", function(event) {
 });
 document.getElementById("clave").addEventListener("keydown", function(event) {
   if (event.key === "Enter") entrar();
+});
+  // ACCESO SECRETO DE ADMINISTRADOR
+document.addEventListener("keydown", function(event) {
+  if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === "a") {
+    event.preventDefault();
+    const panel = document.getElementById("panelAdmin");
+    panel.classList.toggle("hidden");
+
+    if (!panel.classList.contains("hidden")) {
+      const campo = panel.querySelector("input");
+      if (campo) campo.focus();
+    }
+  }
 });
 </script>
 </body>
