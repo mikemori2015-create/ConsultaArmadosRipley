@@ -227,8 +227,7 @@ const CLAVE_INICIAL_HASH = "60cb43bdd736a5c7a556e0602910fca1bdc60d5fd75139fab8a9
 let desbloqueado = false;
 
 function claveVigente() {
-  try { return localStorage.getItem("claveRipleyHash") || CLAVE_INICIAL_HASH; }
-  catch (e) { return CLAVE_INICIAL_HASH; }
+  return CLAVE_INICIAL_HASH;
 }
 
 function entrar() {
