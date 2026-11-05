@@ -334,8 +334,7 @@ async function cargarDesdeSupabase() {
   info = { fecha: "Datos centrales de Supabase" };
   mostrarEstado();
 
-  document.getElementById("mensaje").textContent =
-    "✅ Datos cargados correctamente: " + Object.keys(base).length + " SKU.";
+document.getElementById("mensaje").textContent = "";
 }
 
 cargarDesdeSupabase();
