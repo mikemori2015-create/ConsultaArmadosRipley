@@ -99,6 +99,7 @@ const supabaseArmados = window.supabase.createClient(
     <div id="estado" class="estado"></div>
 
     <div id="zonaClave">
+      <input id="correoAdmin" type="email" placeholder="Correo de administrador" autocomplete="username">
       <input id="clave" type="password" placeholder="Contraseña" autocomplete="off">
       <button class="primary" onclick="entrar()">🔒 Entrar</button>
       <p id="mensajeClave" class="small"></p>
@@ -240,18 +241,28 @@ function claveVigente() {
   return CLAVE_INICIAL_HASH;
 }
 
-function entrar() {
-  const campo = document.getElementById("clave");
+async function entrar() {
+  const correo = document.getElementById("correoAdmin").value.trim();
+  const clave = document.getElementById("clave").value;
   const msg = document.getElementById("mensajeClave");
-  if (sha256Hex(SAL + campo.value) === claveVigente()) {
-    desbloqueado = true;
-    campo.value = "";
-    msg.textContent = "";
-    document.getElementById("zonaClave").classList.add("hidden");
-    document.getElementById("zonaSubir").classList.remove("hidden");
-  } else {
-    msg.textContent = "Contraseña incorrecta.";
+
+  msg.textContent = "Verificando acceso...";
+
+  const { data, error } = await supabaseArmados.auth.signInWithPassword({
+    email: correo,
+    password: clave
+  });
+
+  if (error) {
+    msg.textContent = "No se pudo ingresar. Verifica tus credenciales.";
+    return;
   }
+
+  desbloqueado = true;
+  document.getElementById("clave").value = "";
+  msg.textContent = "";
+  document.getElementById("zonaClave").classList.add("hidden");
+  document.getElementById("zonaSubir").classList.remove("hidden");
 }
 
 function mostrarAccesoAdmin() {
@@ -291,15 +302,44 @@ let base = {};
 let porCod = {};
 let info = null;
 
-try {
-  const guardado = JSON.parse(localStorage.getItem("armadosRipleyV2") || "null");
-  if (guardado && guardado.datos) {
-    base = guardado.datos;
-    porCod = guardado.porCod || {};
-    info = guardado.info || null;
-  }
-} catch (e) {}
+async function cargarDesdeSupabase() {
+  const { data, error } = await supabaseArmados
+    .from("armados")
+    .select("*");
 
+  if (error) {
+    document.getElementById("mensaje").textContent =
+      "No se pudieron cargar los datos desde Supabase: " + error.message;
+    return;
+  }
+
+  base = {};
+  porCod = {};
+
+  data.forEach(function(row) {
+    const sku = String(row.sku || "").replace(/\D/g, "");
+    if (!sku) return;
+
+    base[sku] = {
+      t: row.tipo_armado || "SIN TIPO ASIGNADO",
+      n: row.nombre_producto || "",
+      m: row.modelo || "",
+      l: row.linea || "",
+      s: row.sublinea || ""
+    };
+
+    const cod = String(row.cod_variacion || "").replace(/\D/g, "");
+    if (cod.length >= 6) porCod[cod] = sku;
+  });
+
+  info = { fecha: "Datos centrales de Supabase" };
+  mostrarEstado();
+
+  document.getElementById("mensaje").textContent =
+    "✅ Datos cargados correctamente: " + Object.keys(base).length + " SKU.";
+}
+
+cargarDesdeSupabase();
 function mostrarEstado() {
   const el = document.getElementById("estado");
   const total = Object.keys(base).length;
@@ -331,7 +371,7 @@ function importarExcel(event) {
 
   msg.textContent = "Leyendo el archivo...";
   const lector = new FileReader();
-  lector.onload = function(e) {
+  lector.onload = async function(e) {
     try {
       const libro = XLSX.read(e.target.result, { type: "array" });
       const r = procesarLibro(libro);
@@ -342,12 +382,38 @@ function importarExcel(event) {
       base = r.datos;
       porCod = r.porCod;
       info = { fecha: new Date().toLocaleString("es-PE"), archivo: archivo.name };
-      try {
-        localStorage.setItem("armadosRipleyV2", JSON.stringify({ datos: base, porCod: porCod, info: info }));
-      } catch (err) {
-        msg.textContent = "Se leyó el Excel pero no se pudo guardar en el navegador. Revisa la configuración.";
-        return;
-      }
+     try {
+  const variacionPorSku = {};
+
+  Object.entries(porCod || {}).forEach(([cod, sku]) => {
+    if (!variacionPorSku[sku]) {
+      variacionPorSku[sku] = cod;
+    }
+  });
+
+  const filas = Object.entries(base).map(([sku, dato]) => ({
+    sku: sku,
+    tipo_armado: dato.t || "SIN TIPO ASIGNADO",
+    nombre_producto: dato.n || "",
+    modelo: dato.m || "",
+    linea: dato.l || "",
+    sublinea: dato.s || "",
+    cod_variacion: variacionPorSku[sku] || null
+  }));
+
+  const { error } = await supabaseArmados
+    .from("armados")
+    .upsert(filas, { onConflict: "sku" });
+
+  if (error) {
+    msg.textContent = "Error al guardar en Supabase: " + error.message;
+    return;
+  }
+
+} catch (err) {
+  msg.textContent = "No se pudieron guardar los datos: " + err.message;
+  return;
+}
       msg.textContent = "✅ Se cargaron " + Object.keys(base).length + " SKU desde la hoja " + r.hoja + "." +
         (r.sinTipo ? " ⚠️ " + r.sinTipo + " SKU no tienen tipo asignado en el Excel." : "") +
         (r.repetidos ? " Había " + r.repetidos + " SKU repetidos (se usó el último)." : "");
