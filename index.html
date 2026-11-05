@@ -307,11 +307,10 @@ async function cargarDesdeSupabase() {
     .from("armados")
     .select("*");
 
-  if (error) {
-    document.getElementById("mensaje").textContent =
-      "No se pudieron cargar los datos desde Supabase: " + error.message;
-    return;
-  }
+ if (error) {
+  document.getElementById("mensaje").textContent = "";
+  return;
+}
 
   base = {};
   porCod = {};
